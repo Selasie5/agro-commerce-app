@@ -5,6 +5,9 @@ import * as Yup from 'yup';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, Loader } from 'lucide-react';
+import { toast } from "sonner"
+
 
 const AuthSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Required'),
@@ -22,6 +25,8 @@ const AuthSchema = Yup.object().shape({
 export default function Auth() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -32,6 +37,7 @@ export default function Auth() {
     },
     validationSchema: AuthSchema,
     onSubmit: async (values) => {
+      setLoading(true);
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
       const body = isLogin
         ? { email: values.email, password: values.password }
@@ -44,82 +50,116 @@ export default function Auth() {
       });
 
       const { user, error } = await response.json();
+      setLoading(false);
 
       if (error) {
-        alert(error);
+        toast(error);
       } else {
-        alert(isLogin ? 'Logged in successfully!' : 'Signed up successfully!');
+        toast.success(isLogin ? 'Logged in successfully!' : 'Signed up successfully!');
         router.push(user.role === 'admin' ? '/admin/dashboard' : '/products');
       }
     },
   });
 
   return (
-    <form onSubmit={formik.handleSubmit}>
-      {!isLogin && (
-        <>
-          <Input
-            id="first_name"
-            name="first_name"
-            type="text"
-            placeholder="First Name"
-            value={formik.values.first_name}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
-          {formik.touched.first_name && formik.errors.first_name && (
-            <div className="text-red-500">{formik.errors.first_name}</div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+        <h2 className="mb-6 text-center text-2xl font-semibold text-gray-800">
+          {isLogin ? 'Login to your account' : 'Create an account'}
+        </h2>
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <>
+              <InputField
+                id="first_name"
+                name="first_name"
+                type="text"
+                placeholder="First Name"
+                formik={formik}
+              />
+              <InputField
+                id="last_name"
+                name="last_name"
+                type="text"
+                placeholder="Last Name"
+                formik={formik}
+              />
+            </>
           )}
 
-          <Input
-            id="last_name"
-            name="last_name"
-            type="text"
-            placeholder="Last Name"
-            value={formik.values.last_name}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
-          {formik.touched.last_name && formik.errors.last_name && (
-            <div className="text-red-500">{formik.errors.last_name}</div>
-          )}
-        </>
-      )}
+          <InputField id="email" name="email" type="email" placeholder="Email" formik={formik} />
 
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="w-full rounded-md border px-4 py-2 pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-3 text-gray-500"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+            {formik.touched.password && formik.errors.password && (
+              <p className="mt-1 text-sm text-red-500">{formik.errors.password}</p>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full rounded-md bg-lime-600 px-4 py-2 text-white transition-all duration-300 hover:bg-lime-700 focus:ring-2 focus:ring-lime-400 disabled:bg-lime-300"
+            disabled={formik.isSubmitting || loading}
+          >
+            {loading ? <Loader className="animate-spin" size={20} /> : isLogin ? 'Login' : 'Sign Up'}
+          </Button>
+
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 text-sm text-gray-600 hover:underline"
+              onClick={() => setIsLogin(!isLogin)}
+            >
+              {isLogin ? 'Switch to Sign Up' : 'Switch to Login'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+interface InputFieldProps {
+  id: string;
+  name: string;
+  type: string;
+  placeholder: string;
+  formik: any; // You can replace 'any' with a more specific type if available
+}
+
+function InputField({ id, name, type, placeholder, formik }: InputFieldProps) {
+  return (
+    <div>
       <Input
-        id="email"
-        name="email"
-        type="email"
-        placeholder="Email"
-        value={formik.values.email}
+        id={id}
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        value={formik.values[name]}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
+        className="w-full rounded-md border px-4 py-2"
       />
-      {formik.touched.email && formik.errors.email && (
-        <div className="text-red-500">{formik.errors.email}</div>
+      {formik.touched[name] && formik.errors[name] && (
+        <p className="mt-1 text-sm text-red-500">{formik.errors[name]}</p>
       )}
-
-      <Input
-        id="password"
-        name="password"
-        type="password"
-        placeholder="Password"
-        value={formik.values.password}
-        onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-      />
-      {formik.touched.password && formik.errors.password && (
-        <div className="text-red-500">{formik.errors.password}</div>
-      )}
-
-      <Button type="submit">{isLogin ? 'Login' : 'Sign Up'}</Button>
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => setIsLogin(!isLogin)}
-      >
-        {isLogin ? 'Switch to Sign Up' : 'Switch to Login'}
-      </Button>
-    </form>
+    </div>
   );
 }
