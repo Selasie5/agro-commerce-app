@@ -6,8 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader } from 'lucide-react';
-import { toast } from "sonner"
-
+import { toast } from 'sonner';
 
 const AuthSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Required'),
@@ -19,6 +18,10 @@ const AuthSchema = Yup.object().shape({
   last_name: Yup.string().when('isLogin', {
     is: false,
     then: (schema) => schema.required('Last name is required'),
+  }),
+  role: Yup.string().when('isLogin', {
+    is: false,
+    then: (schema) => schema.required('Role is required'),
   }),
 });
 
@@ -34,6 +37,7 @@ export default function Auth() {
       password: '',
       first_name: '',
       last_name: '',
+      role: 'user', // Default role
     },
     validationSchema: AuthSchema,
     onSubmit: async (values) => {
@@ -41,7 +45,7 @@ export default function Auth() {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
       const body = isLogin
         ? { email: values.email, password: values.password }
-        : { ...values, role: 'user' };
+        : { ...values, role: values.role }; // Include the selected role
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -84,6 +88,25 @@ export default function Auth() {
                 placeholder="Last Name"
                 formik={formik}
               />
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                  Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formik.values.role}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-4 py-2 shadow-sm focus:border-lime-500 focus:ring-lime-500 sm:text-sm"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+                {formik.touched.role && formik.errors.role && (
+                  <p className="mt-1 text-sm text-red-500">{formik.errors.role}</p>
+                )}
+              </div>
             </>
           )}
 

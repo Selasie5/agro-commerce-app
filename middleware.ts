@@ -10,7 +10,7 @@ export async function middleware(request: Request) {
 
   const { data: userData, error } = await supabase
     .from('users')
-    .select('role')
+    .select('*')
     .eq('id', user?.data?.user?.id)
     .single();
 
@@ -18,7 +18,8 @@ export async function middleware(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (new URL(request.url).pathname.startsWith('/admin') && userData.role !== 'admin') {
+  const url = new URL(request.url);
+  if (url.pathname.startsWith('/admin') && userData.role !== 'admin') {
     return NextResponse.redirect(new URL('/products', request.url));
   }
 
