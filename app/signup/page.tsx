@@ -60,6 +60,7 @@ export default function Auth() {
         toast(error);
       } else {
         toast.success(isLogin ? 'Logged in successfully!' : 'Signed up successfully!');
+        console.log('Redirecting user:', user);
         router.push(user.role === 'admin' ? '/admin/dashboard' : '/products');
       }
     },

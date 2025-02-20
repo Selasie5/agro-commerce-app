@@ -13,24 +13,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // Validate role
-  if (role !== 'user' && role !== 'admin') {
-    return NextResponse.json(
-      { error: 'Invalid role. Role must be either "user" or "admin"' },
-      { status: 400 }
-    );
-  }
-
   // Sign up the user with Supabase Auth
   const { data: { user }, error: authError } = await supabase.auth.signUp({ email, password });
 
   if (authError) {
+    console.error('Auth Error:', authError);
     return NextResponse.json({ error: authError.message }, { status: 400 });
   }
 
   if (!user) {
+    console.error('User is undefined');
     return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
   }
+
+  console.log('User:', user); // Log the user object
 
   // Insert user data into the `users` table
   const { data: userData, error: dbError } = await supabase
@@ -38,6 +34,7 @@ export async function POST(request: Request) {
     .insert([{ id: user.id, email, role, first_name, last_name }]);
 
   if (dbError) {
+    console.error('Database Error:', dbError);
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
